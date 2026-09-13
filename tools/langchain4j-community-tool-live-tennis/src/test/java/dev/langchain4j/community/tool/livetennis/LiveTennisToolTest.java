@@ -11,6 +11,8 @@ import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LiveTennisToolTest {
 
@@ -54,6 +56,25 @@ class LiveTennisToolTest {
                             + "Carlos Alcaraz (#2) vs Jannik Sinner (#1) — ")
                     .contains("sets 1-0; games 6-4 3-4; points 30-15; player 1 serving")
                     .endsWith("Showing 1 of 3; more available, raise the limit to see them.");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", ",\"meta\":null", ",\"meta\":{}", ",\"meta\":{\"total\":5}"})
+    void listTools_countReturnedRecordsWhenMetadataOmitsCount(String metadata) throws Exception {
+        String response = "{\"data\":[{\"id\":1},{\"id\":2}]" + metadata + "}";
+        try (TestServer server = startServer(200, response)) {
+            LiveTennisTool tool = tool(server);
+
+            assertThat(tool.getLiveMatches(null, null, null))
+                    .contains("Showing 2")
+                    .doesNotContain("Showing 0");
+            assertThat(tool.getUpcomingFixtures(null, null, null))
+                    .contains("Showing 2")
+                    .doesNotContain("Showing 0");
+            assertThat(tool.getRankings("atp", null, null))
+                    .contains("Showing 2")
+                    .doesNotContain("Showing 0");
         }
     }
 

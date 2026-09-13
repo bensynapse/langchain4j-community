@@ -20,13 +20,4 @@ final class LiveTennisClientException extends RuntimeException {
         super(message, cause);
         this.statusCode = statusCode;
     }
-
-    /**
-     * Returns the HTTP status, or {@code -1} when no response was received.
-     *
-     * @return HTTP status or -1
-     */
-    int statusCode() {
-        return statusCode;
-    }
 }

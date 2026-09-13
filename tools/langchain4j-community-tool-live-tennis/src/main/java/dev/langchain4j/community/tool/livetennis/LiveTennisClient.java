@@ -16,6 +16,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -224,6 +226,11 @@ final class LiveTennisClient {
         String normalized = date.trim();
         if (!DATE.matcher(normalized).matches()) {
             throw new IllegalArgumentException("as_of must be a YYYY-MM-DD date");
+        }
+        try {
+            LocalDate.parse(normalized);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("as_of must be a YYYY-MM-DD date", e);
         }
         return normalized;
     }

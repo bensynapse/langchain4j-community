@@ -14,6 +14,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LiveTennisClientTest {
 
@@ -79,6 +81,30 @@ class LiveTennisClientTest {
             client.listRankings("wta", "2026-09-08", 50);
 
             assertThat(recorded.get().pathAndQuery).isEqualTo("/rankings?system=wta&limit=50&as_of=2026-09-08");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {"2026-02-29", "2026-02-30", "2026-04-31", "2026-00-10", "2026-13-01", "2026-01-00", "2026-01-32"
+            })
+    void listRankings_rejectsImpossibleCalendarDatesBeforeRequesting(String date) throws Exception {
+        AtomicReference<RecordedRequest> recorded = new AtomicReference<>();
+        try (TestServer server = startServer(200, "{\"data\":[]}", recorded)) {
+            assertThatThrownBy(() -> client(server).listRankings("atp", date, 10))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("as_of must be a YYYY-MM-DD date");
+            assertThat(recorded.get()).isNull();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"2024-02-29", "2000-02-29", "2026-04-30", " 2026-09-08 "})
+    void listRankings_acceptsValidCalendarDates(String date) throws Exception {
+        AtomicReference<RecordedRequest> recorded = new AtomicReference<>();
+        try (TestServer server = startServer(200, "{\"data\":[]}", recorded)) {
+            client(server).listRankings("atp", date, 10);
+            assertThat(recorded.get().pathAndQuery).endsWith("&as_of=" + date.trim());
         }
     }
 
